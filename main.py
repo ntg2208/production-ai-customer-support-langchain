@@ -35,7 +35,7 @@ def load_customer(email: str) -> dict:
     customer_info = dict(customer)
     location_context = get_customer_location_context(customer_info)
 
-    bookings = db.get_customer_bookings(customer_info["customer_id"])
+    bookings = db.get_customer_bookings(customer_info["email"])
     active_bookings = "None"
     if bookings:
         booking_strs = []

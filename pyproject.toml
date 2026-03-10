@@ -16,7 +16,7 @@ dependencies = [
 ]
 
 [tool.hatch.build.targets.wheel]
-packages = ["utils", "config", "database", "tools", "sub_agents"]
+packages = ["utils", "config", "database", "tools", "nodes", "prompts"]
 
 [build-system]
 requires = ["hatchling"]

@@ -46,6 +46,8 @@ def get_vector_store() -> FAISS:
     """Load existing FAISS index or build a new one."""
     embeddings = get_embeddings_model()
     if FAISS_INDEX_DIR.exists():
+        # allow_dangerous_deserialization=True is required for FAISS pickle loading.
+        # Safe here: the index is built from our own data and stored locally.
         return FAISS.load_local(
             str(FAISS_INDEX_DIR),
             embeddings,

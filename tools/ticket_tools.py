@@ -8,11 +8,7 @@ from typing import Dict, Optional
 from langchain_core.tools import tool
 
 from database.database import UKConnectDB
-from utils.city_station_mapping import get_stations_by_city, normalize_location_input, search_cities_and_stations
-from config.time_config import get_system_time_iso
-
-# Configuration - now uses centralized time
-CURRENT_DATE = get_system_time_iso()  # Gets time from centralized config
+from utils.city_station_mapping import get_stations_by_city, search_cities_and_stations
 
 # Database connection helper
 def get_database_connection():
