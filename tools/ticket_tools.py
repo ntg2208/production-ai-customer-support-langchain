@@ -56,52 +56,40 @@ def validate_date_format(date_str: str) -> None:
 # TICKET SEARCH FUNCTIONS
 # ==============================================
 
-@tool
-def search_available_tickets(from_station: str = "", to_station: str = "",
-                              departure_date: str = "", ticket_type: str = "") -> Dict:
-    """
-    Search available tickets for purchase (inventory system)
-
-    Args:
-        from_station (str, optional): Origin station or city name
-        to_station (str, optional): Destination station or city name
-        departure_date (str, optional): Date in 'YYYY-MM-DD' format (searches from this date onward)
-        ticket_type (str, optional): Type of ticket to filter by
-
-    Returns:
-        dict: Available tickets for purchase (returns all matching results)
-    """
+def _search_available_tickets_impl(from_station: str = "", to_station: str = "",
+                                    departure_date: str = "", ticket_type: str = "") -> Dict:
+    """Internal implementation for searching available tickets (callable directly)."""
     db = None
     try:
-        from_station = from_station or None
-        to_station = to_station or None
-        departure_date = departure_date or None
+        from_station_opt: Optional[str] = from_station or None
+        to_station_opt: Optional[str] = to_station or None
+        departure_date_opt: Optional[str] = departure_date or None
 
-        if from_station:
-            validate_station_name(from_station)
-        if to_station:
-            validate_station_name(to_station)
-        if departure_date:
-            validate_date_format(departure_date)
+        if from_station_opt:
+            validate_station_name(from_station_opt)
+        if to_station_opt:
+            validate_station_name(to_station_opt)
+        if departure_date_opt:
+            validate_date_format(departure_date_opt)
 
         db = get_database_connection()
 
         tickets = db.search_available_tickets(
-            from_station=from_station,
-            to_station=to_station,
-            departure_date=departure_date,
+            from_station=from_station_opt,
+            to_station=to_station_opt,
+            departure_date=departure_date_opt,
             ticket_type=None,
             max_price=None
         )
 
         if not tickets:
             search_desc = "available tickets"
-            if from_station:
-                search_desc += f" from {from_station}"
-            if to_station:
-                search_desc += f" to {to_station}"
-            if departure_date:
-                search_desc += f" on {departure_date}"
+            if from_station_opt:
+                search_desc += f" from {from_station_opt}"
+            if to_station_opt:
+                search_desc += f" to {to_station_opt}"
+            if departure_date_opt:
+                search_desc += f" on {departure_date_opt}"
             return {"error": f"No {search_desc} found"}
 
         ticket_list = []
@@ -129,9 +117,9 @@ def search_available_tickets(from_station: str = "", to_station: str = "",
             "success": True,
             "total_tickets": len(ticket_list),
             "search_criteria": {
-                "from_station": from_station,
-                "to_station": to_station,
-                "departure_date": departure_date
+                "from_station": from_station_opt,
+                "to_station": to_station_opt,
+                "departure_date": departure_date_opt
             },
             "tickets": ticket_list
         }
@@ -150,6 +138,29 @@ def search_available_tickets(from_station: str = "", to_station: str = "",
     finally:
         if db:
             db.close()
+
+
+@tool
+def search_available_tickets(from_station: str = "", to_station: str = "",
+                              departure_date: str = "", ticket_type: str = "") -> Dict:
+    """
+    Search available tickets for purchase (inventory system)
+
+    Args:
+        from_station (str, optional): Origin station or city name
+        to_station (str, optional): Destination station or city name
+        departure_date (str, optional): Date in 'YYYY-MM-DD' format (searches from this date onward)
+        ticket_type (str, optional): Type of ticket to filter by
+
+    Returns:
+        dict: Available tickets for purchase (returns all matching results)
+    """
+    return _search_available_tickets_impl(
+        from_station=from_station,
+        to_station=to_station,
+        departure_date=departure_date,
+        ticket_type=ticket_type,
+    )
 
 
 @tool
@@ -267,7 +278,7 @@ def search_tickets_by_city(city_name: str = "", departure_date: str = "", limit:
     if not city_name or not isinstance(city_name, str):
         return {"error": "City name must be a non-empty string"}
 
-    departure_date = departure_date or None
+    departure_date = departure_date or ""
     if limit <= 0:
         limit = 20
 
@@ -279,12 +290,12 @@ def search_tickets_by_city(city_name: str = "", departure_date: str = "", limit:
     results = {"from_city": [], "to_city": [], "stations_searched": stations}
 
     # Search tickets FROM this city
-    from_results = search_available_tickets.invoke({"from_station": city_name, "to_station": "", "departure_date": departure_date or "", "ticket_type": ""})
+    from_results = _search_available_tickets_impl(from_station=city_name, to_station="", departure_date=departure_date or "", ticket_type="")
     if from_results.get("success"):
         results["from_city"] = from_results.get("tickets", [])
 
     # Search tickets TO this city
-    to_results = search_available_tickets.invoke({"from_station": "", "to_station": city_name, "departure_date": departure_date or "", "ticket_type": ""})
+    to_results = _search_available_tickets_impl(from_station="", to_station=city_name, departure_date=departure_date or "", ticket_type="")
     if to_results.get("success"):
         results["to_city"] = to_results.get("tickets", [])
 
@@ -315,16 +326,11 @@ def search_tickets_from_city(from_city: str = "", departure_date: str = "", tick
     Returns:
         dict: Available tickets from the specified city
     """
-    departure_date = departure_date or None
+    departure_date = departure_date or ""
     if limit <= 0:
         limit = 20
 
-    return search_available_tickets.invoke({
-        "from_station": from_city,
-        "to_station": "",
-        "departure_date": departure_date or "",
-        "ticket_type": ""
-    })
+    return _search_available_tickets_impl(from_station=from_city, to_station="", departure_date=departure_date, ticket_type="")
 
 
 @tool
@@ -340,16 +346,11 @@ def search_tickets_to_city(to_city: str = "", departure_date: str = "", limit: i
     Returns:
         dict: Available tickets to the specified city
     """
-    departure_date = departure_date or None
+    departure_date = departure_date or ""
     if limit <= 0:
         limit = 20
 
-    return search_available_tickets.invoke({
-        "from_station": "",
-        "to_station": to_city,
-        "departure_date": departure_date or "",
-        "ticket_type": ""
-    })
+    return _search_available_tickets_impl(from_station="", to_station=to_city, departure_date=departure_date, ticket_type="")
 
 
 @tool
@@ -366,16 +367,11 @@ def search_routes_between_cities(from_location: str = "", to_location: str = "",
     Returns:
         dict: Available routes between the locations
     """
-    departure_date = departure_date or None
+    departure_date = departure_date or ""
     if limit <= 0:
         limit = 20
 
-    return search_available_tickets.invoke({
-        "from_station": from_location,
-        "to_station": to_location,
-        "departure_date": departure_date or "",
-        "ticket_type": ""
-    })
+    return _search_available_tickets_impl(from_station=from_location, to_station=to_location, departure_date=departure_date, ticket_type="")
 
 
 @tool
