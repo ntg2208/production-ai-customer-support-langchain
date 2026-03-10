@@ -44,14 +44,7 @@ def get_deterministic_boolean(seed_value, option='table'):
     return ((seed_value + offset) % 3) != 0  # 2/3 chance of True
 
 # Import centralized time configuration
-try:
-    from ..config.time_config import get_system_time_iso
-except ImportError:
-    # Fallback for direct execution
-    import sys
-    import os
-    sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'config'))
-    from time_config import get_system_time_iso
+from config.time_config import get_system_time_iso
 
 def populate_data(db_path=None):
     """Populate the enhanced database. If no path provided, uses the default database location."""
