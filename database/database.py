@@ -49,6 +49,8 @@ class UKConnectDB:
         self.conn = None
         # For backward compatibility, but centralized config takes precedence
         self.current_date = current_date
+        # Auto-connect for convenience (callers don't need to call connect() manually)
+        self.connect()
 
     def __enter__(self):
         """Context manager entry - connects to database"""
@@ -651,13 +653,14 @@ class UKConnectDB:
     # ==============================================
 
     def find_customer_by_email(self, email):
-        """Find customer by email address"""
+        """Find customer by email address. Returns a single dict or None."""
         query = '''
         SELECT id, customer_id, name, email, phone, address
         FROM customer_info
         WHERE email = ?
         '''
-        return self.execute_query(query, (email,))
+        results = self.execute_query(query, (email,))
+        return results[0] if results else None
 
     def get_customer_information(self, email):
         """
