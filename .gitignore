@@ -5,4 +5,5 @@ __pycache__/
 *.db
 *.pkl
 faiss_index/
+database/faiss_index/
 .DS_Store
